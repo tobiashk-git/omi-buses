@@ -94,6 +94,12 @@
     font-size: 28px; font-weight: 800; box-shadow: 0 4px 0 rgba(0,0,0,.3);
   }
   .flip button:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.3); }
+  .online {
+    display: flex; align-items: center; justify-content: space-between; min-height: 68px;
+    margin: 0 0 12px; padding: 0 22px; border-radius: 18px; background: var(--card);
+    border: 3px solid var(--accent); color: var(--accent); font-size: 26px; font-weight: 800; text-decoration: none;
+  }
+  .online span { font-size: 36px; line-height: 1; }
   .foot { font-size: 17px; color: var(--soft); margin-top: 22px; text-align: center; }
   .hidden { display: none; }
 </style>
@@ -123,12 +129,19 @@
 <div class="flip hidden" id="flipBar"><button id="flipBtn"></button></div>
 
 <script>
-const APP_VERSION = 7;  // keep in step with VERSION in sw.js
+const APP_VERSION = 8;  // keep in step with VERSION in sw.js
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const STOPS = {  // where Omi waits / gets off, in plain words
   falmouth: "The Moor", hospital: "the Trelawny Entrance", portscatho: "Springfield",
 };
+const TIMETABLES = {  // full timetable + live buses on bustimes.org, one page per route
+  "32": "https://bustimes.org/services/32-falmouth-truro-truro-college",
+  "32A": "https://bustimes.org/services/32a-penryn-truro-truro-college",
+  "87": "https://bustimes.org/services/87-truro-perranporth-newquay",
+  "50": "https://bustimes.org/services/50-truro-probus-tregony-portscatho-st-mawes-4",
+};
+const ROUTES = { falmouth: ["32", "32A"], hospital: ["32A", "87"], portscatho: ["50"] };
 const PLACE_COLOUR = { falmouth: "--falmouth", hospital: "--hospital", portscatho: "--portscatho" };
 
 let data = null;
@@ -225,6 +238,8 @@ function renderTimes() {
       }
     }
   }
+  html += `<h2>Full timetable online</h2>` + ROUTES[place].map((l) =>
+    `<a class="online" href="${TIMETABLES[l]}" target="_blank" rel="noopener">Bus ${l} timetable <span>›</span></a>`).join("");
   $("timesBody").innerHTML = html;
   $("timesFoot").textContent = footText();
 }
