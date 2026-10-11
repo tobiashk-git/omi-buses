@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Omi Buses</title>
+<meta name="description" content="Bus times from Truro to Falmouth, Treliske Hospital and Portscatho">
+<meta name="theme-color" content="#fdf8ee">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Omi Buses">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<style>
+  :root {
+    --paper: #fdf8ee;
+    --ink: #111;
+    --soft: #4a4a4a;
+    --line: #d9d0bf;
+    --card: #fff;
+    --falmouth: #0b4f8a;
+    --hospital: #1d6b37;
+    --portscatho: #7a2a82;
+    --accent: var(--falmouth);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 22px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    -webkit-tap-highlight-color: transparent;
+  }
+  button { font: inherit; cursor: pointer; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 16px 16px 140px; }
+
+  /* Home */
+  .clock { text-align: center; margin: 10px 0 4px; }
+  .clock .now { font-size: 54px; font-weight: 800; letter-spacing: 1px; }
+  .clock .day { font-size: 24px; color: var(--soft); }
+  h1 { font-size: 30px; text-align: center; margin: 14px 0 22px; }
+  .dest {
+    display: flex; align-items: center; gap: 18px; width: 100%;
+    min-height: 120px; margin: 0 0 20px; padding: 18px 22px;
+    border: 0; border-radius: 22px; color: #fff; text-align: left;
+    box-shadow: 0 4px 0 rgba(0,0,0,.25);
+  }
+  .dest:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.25); }
+  .dest .ico { font-size: 52px; line-height: 1; }
+  .dest .txt { font-size: 32px; font-weight: 800; line-height: 1.1; }
+  .dest .sub { display: block; font-size: 20px; font-weight: 500; opacity: .92; margin-top: 4px; }
+  .dest.falmouth { background: var(--falmouth); }
+  .dest.hospital { background: var(--hospital); }
+  .dest.portscatho { background: var(--portscatho); }
+
+  /* Times */
+  .top { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .home {
+    min-height: 60px; padding: 0 22px; border-radius: 16px;
+    border: 3px solid var(--ink); background: var(--card); font-size: 24px; font-weight: 700;
+  }
+  .nowsmall { margin-left: auto; font-size: 24px; font-weight: 700; }
+  .route { font-size: 30px; font-weight: 800; line-height: 1.15; margin: 14px 0 2px; color: var(--accent); }
+  .when { font-size: 22px; color: var(--soft); margin-bottom: 14px; }
+  .next {
+    background: var(--accent); color: #fff; border-radius: 22px; padding: 18px 22px 20px; margin-bottom: 20px;
+  }
+  .next .label { font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: .9; }
+  .next .time { font-size: 84px; font-weight: 800; line-height: 1; margin: 6px 0 4px; }
+  .next .in { font-size: 30px; font-weight: 700; }
+  .next .meta { font-size: 22px; margin-top: 10px; opacity: .95; }
+  .notice {
+    background: var(--card); border: 3px solid var(--accent); border-radius: 18px;
+    padding: 16px 18px; font-size: 26px; font-weight: 700; margin-bottom: 18px;
+  }
+  h2 { font-size: 24px; margin: 20px 0 8px; }
+  .list { background: var(--card); border-radius: 18px; border: 2px solid var(--line); overflow: hidden; }
+  .row { display: flex; align-items: baseline; gap: 14px; padding: 14px 18px; border-top: 2px solid var(--line); }
+  .row:first-child { border-top: 0; }
+  .row .t { font-size: 34px; font-weight: 800; min-width: 96px; }
+  .row .info { font-size: 20px; color: var(--soft); line-height: 1.3; }
+  .row .info b { color: var(--ink); }
+  .flip {
+    position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: linear-gradient(rgba(253,248,238,0), var(--paper) 30%);
+  }
+  .flip button {
+    display: block; width: 100%; max-width: 528px; margin: 0 auto; min-height: 84px;
+    border: 0; border-radius: 20px; background: var(--ink); color: #fff;
+    font-size: 28px; font-weight: 800; box-shadow: 0 4px 0 rgba(0,0,0,.3);
+  }
+  .flip button:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.3); }
+  .foot { font-size: 17px; color: var(--soft); margin-top: 22px; text-align: center; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section id="home">
+    <div class="clock"><div class="now" id="homeNow"></div><div class="day" id="homeDay"></div></div>
+    <h1>Where are you going?</h1>
+    <button class="dest falmouth" data-place="falmouth"><span class="ico">⚓</span><span class="txt">Falmouth<span class="sub">Bus 32 and 32A</span></span></button>
+    <button class="dest hospital" data-place="hospital"><span class="ico">🏥</span><span class="txt">Treliske Hospital<span class="sub">Bus 32A and 87</span></span></button>
+    <button class="dest portscatho" data-place="portscatho"><span class="ico">⛵</span><span class="txt">Portscatho<span class="sub">Bus 50</span></span></button>
+    <p class="foot" id="homeFoot"></p>
+  </section>
+
+  <section id="times" class="hidden">
+    <div class="top">
+      <button class="home" id="homeBtn">‹ Home</button>
+      <span class="nowsmall" id="timesNow"></span>
+    </div>
+    <div class="route" id="routeTitle"></div>
+    <div class="when" id="routeWhen"></div>
+    <div id="timesBody"></div>
+    <p class="foot" id="timesFoot"></p>
+  </section>
+</div>
+<div class="flip hidden" id="flipBar"><button id="flipBtn"></button></div>
+
+<script>
+const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const STOPS = {  // where Omi waits / gets off, in plain words
+  falmouth: "The Moor", hospital: "the Trelawny Entrance", portscatho: "the Church",
+};
+const PLACE_COLOUR = { falmouth: "--falmouth", hospital: "--hospital", portscatho: "--portscatho" };
+
+let data = null;
+let view = null;  // {place, leg: "there" | "back"}
+
+const $ = (id) => document.getElementById(id);
+const pad = (n) => String(n).padStart(2, "0");
+const ymd = (d) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+const clock = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const dayName = (d) => `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+const mins = (hhmm) => { const [h, m] = hhmm.split(":").map(Number); return h * 60 + m; };
+
+function runs(serviceId, date) {
+  const s = data.services[serviceId];
+  if (!s) return false;
+  const d = ymd(date);
+  if (s.remove.includes(d)) return false;
+  if (s.add.includes(d)) return true;
+  const weekday = (date.getDay() + 6) % 7;  // Monday = 0, as in GTFS
+  return s.start <= d && d <= s.end && s.days[weekday] === "1";
+}
+
+function busesOn(place, leg, date) {
+  const seen = new Set();
+  return data.places[place][leg]
+    .filter((j) => runs(j.s, date))
+    .filter((j) => { const k = j.d + j.l; if (seen.has(k)) return false; seen.add(k); return true; })
+    .sort((a, b) => mins(a.d) - mins(b.d));
+}
+
+function waitText(m) {
+  if (m <= 0) return "Due now";
+  if (m < 60) return `in ${m} minute${m === 1 ? "" : "s"}`;
+  const h = Math.floor(m / 60), r = m % 60;
+  return `in ${h} hour${h === 1 ? "" : "s"}` + (r ? ` ${r} min` : "");
+}
+
+function fromText(j, leg) {
+  return leg === "there" ? `Truro Bus Station, ${j.at}` : (j.at === "Church" ? "the Church" : j.at);
+}
+
+function rowHtml(j, place, leg) {
+  const to = leg === "there" ? data.places[place].name : "Truro";
+  return `<div class="row"><span class="t">${j.d}</span><span class="info"><b>Bus ${j.l}</b> · ${leg === "there" ? j.at : "from " + fromText(j, leg)}<br>arrives ${to} ${j.a}</span></div>`;
+}
+
+function renderTimes() {
+  const { place, leg } = view;
+  const name = data.places[place].name;
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  document.documentElement.style.setProperty("--accent", `var(${PLACE_COLOUR[place]})`);
+
+  $("timesNow").textContent = `Now ${clock(now)}`;
+  $("routeTitle").textContent = leg === "there" ? `Truro → ${name}` : `${name} → Truro`;
+  $("routeWhen").textContent = leg === "there"
+    ? "From Truro Bus Station"
+    : `From ${STOPS[place]}, ${name}`;
+  $("flipBtn").textContent = leg === "there" ? "⇄  Buses back to Truro" : `⇄  Buses to ${name}`;
+
+  const today = busesOn(place, leg, now);
+  const left = today.filter((j) => mins(j.d) >= nowMin);
+  let html = "";
+
+  if (left.length) {
+    const n = left[0];
+    const to = leg === "there" ? name : "Truro";
+    html += `<div class="next">
+      <div class="label">Next bus</div>
+      <div class="time">${n.d}</div>
+      <div class="in">${waitText(mins(n.d) - nowMin)}</div>
+      <div class="meta">Bus ${n.l} from ${fromText(n, leg)}<br>Arrives ${to} at ${n.a}</div>
+    </div>`;
+    if (left.length > 1) {
+      html += `<h2>Later today</h2><div class="list">${left.slice(1).map((j) => rowHtml(j, place, leg)).join("")}</div>`;
+    } else {
+      html += `<div class="notice">This is the last bus today.</div>`;
+    }
+  } else {
+    html += `<div class="notice">${today.length ? "No more buses today." : `No buses today (${DAYS[now.getDay()]}).`}</div>`;
+    // Look ahead up to a week for the next day with buses.
+    for (let i = 1; i <= 7; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      const list = busesOn(place, leg, d);
+      if (list.length) {
+        html += `<h2>${i === 1 ? "Tomorrow" : ""} ${dayName(d)}</h2><div class="list">${list.map((j) => rowHtml(j, place, leg)).join("")}</div>`;
+        break;
+      }
+    }
+  }
+  $("timesBody").innerHTML = html;
+  $("timesFoot").textContent = footText();
+}
+
+function footText() {
+  const b = data.built.split("-");
+  return `Times from the official Go Cornwall Bus timetable, checked ${Number(b[2])} ${MONTHS[b[1] - 1]} ${b[0]}. Buses can run late or change.`;
+}
+
+function renderHome() {
+  const now = new Date();
+  $("homeNow").textContent = clock(now);
+  $("homeDay").textContent = dayName(now);
+  $("homeFoot").textContent = footText();
+}
+
+function show() {
+  const [place, leg] = location.hash.slice(1).split("/");
+  view = data.places[place] ? { place, leg: leg === "back" ? "back" : "there" } : null;
+  $("home").classList.toggle("hidden", !!view);
+  $("times").classList.toggle("hidden", !view);
+  $("flipBar").classList.toggle("hidden", !view);
+  if (view) renderTimes(); else renderHome();
+  window.scrollTo(0, 0);
+}
+
+function tick() {
+  if (!data) return;
+  if (view) {
+    const y = window.scrollY;
+    renderTimes();
+    window.scrollTo(0, y);
+  } else renderHome();
+}
+
+document.querySelectorAll(".dest").forEach((b) =>
+  b.addEventListener("click", () => { location.hash = `${b.dataset.place}/there`; }));
+$("homeBtn").addEventListener("click", () => {
+  if (history.length > 1 && location.hash) history.back(); else location.hash = "";
+});
+$("flipBtn").addEventListener("click", () => {
+  location.replace(`#${view.place}/${view.leg === "there" ? "back" : "there"}`);
+});
+window.addEventListener("hashchange", show);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
+setInterval(tick, 15000);
+
+fetch("data/timetable.json")
+  .then((r) => r.json())
+  .then((d) => { data = d; show(); })
+  .catch(() => {
+    document.querySelector(".wrap").innerHTML =
+      '<div class="notice" style="margin-top:40px">Sorry, the bus times could not be loaded. Please close the app and open it again.</div>';
+  });
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>
