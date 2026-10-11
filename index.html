@@ -124,7 +124,7 @@
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const STOPS = {  // where Omi waits / gets off, in plain words
-  falmouth: "The Moor", hospital: "the Trelawny Entrance", portscatho: "the Church",
+  falmouth: "The Moor", hospital: "the Trelawny Entrance", portscatho: "Springfield",
 };
 const PLACE_COLOUR = { falmouth: "--falmouth", hospital: "--hospital", portscatho: "--portscatho" };
 
@@ -164,7 +164,7 @@ function waitText(m) {
 }
 
 function fromText(j, leg) {
-  return leg === "there" ? `Truro Bus Station, ${j.at}` : (j.at === "Church" ? "the Church" : j.at);
+  return leg === "there" ? `Truro Bus Station, ${j.at}` : j.at;
 }
 
 function rowHtml(j, place, leg) {

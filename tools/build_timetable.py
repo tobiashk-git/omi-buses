@@ -34,7 +34,7 @@ PLACES = {
     "portscatho": {
         "name": "Portscatho",
         "lines": ["50"],
-        "stops": {"0800COC30857": "Church"},
+        "stops": {"0800COC30859": "Springfield"},
     },
 }
 

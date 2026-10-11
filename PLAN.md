@@ -16,7 +16,7 @@ works out the right buses for any date, offline.
 |---|---|---|---|
 | Falmouth | 32, 32A | Stand B (arrive G) | The Moor |
 | Treliske Hospital | 32A (Stand G), 87 (Stand J) | | Trelawny Entrance |
-| Portscatho | 50 | Stand C | Church (village centre) |
+| Portscatho | 50 | Stand C | Springfield |
 
 The 494 circular also reaches the hospital but leaves from Lemon Quay, not the
 bus station, so it is left out to keep things simple.
