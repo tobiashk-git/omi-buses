@@ -24,9 +24,11 @@ bus station, so it is left out to keep things simple.
 ## Phases
 1. **App + built-in timetable.** DONE 2026-10-11: big buttons, next-bus card,
    countdown, arrival times, day-aware, tomorrow's buses after the last one, offline service worker.
-2. **Hosting + weekly auto-refresh.** GitHub Pages (HTTPS, so it installs to the
+2. **Hosting + weekly auto-refresh.** DONE 2026-10-11: live at
+   https://tobiashk-git.github.io/omi-buses/ (repo tobiashk-git/omi-buses). GitHub Pages (HTTPS, so it installs to the
    home screen) and a weekly GitHub Action that runs `build_timetable.py` and commits
-   `data/timetable.json` if it changed. Optional: a plain-words notice for diversions.
+   `data/timetable.json` if it changed (`.github/workflows/refresh-timetable.yml`, Mondays 05:00 UTC,
+   also runnable by hand from the Actions tab). Optional: a plain-words notice for diversions.
 3. **Live times (optional).** BODS live bus locations need an API key, so this needs a
    tiny proxy (e.g. a Cloudflare Worker) to keep the key off the phone.
 
