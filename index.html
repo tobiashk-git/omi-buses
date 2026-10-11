@@ -71,6 +71,7 @@
   .next .time { font-size: 84px; font-weight: 800; line-height: 1; margin: 6px 0 4px; }
   .next .in { font-size: 30px; font-weight: 700; }
   .next .meta { font-size: 22px; margin-top: 10px; opacity: .95; }
+  .next .arr { font-size: 27px; font-weight: 800; margin: 6px 0 2px; }
   .notice {
     background: var(--card); border: 3px solid var(--accent); border-radius: 18px;
     padding: 16px 18px; font-size: 26px; font-weight: 700; margin-bottom: 18px;
@@ -203,7 +204,7 @@ function renderTimes() {
       <div class="label">Next bus</div>
       <div class="time">${n.d}</div>
       <div class="in">${waitText(mins(n.d) - nowMin)}</div>
-      <div class="meta">Bus ${n.l} from ${fromText(n, leg)}<br>Arrives ${to} at ${n.a}<br>The journey takes ${journeyText(n)}</div>
+      <div class="meta">Bus ${n.l} from ${fromText(n, leg)}<div class="arr">Arrives ${to} at ${n.a}</div>The journey takes ${journeyText(n)}</div>
     </div>`;
     if (left.length > 1) {
       html += `<h2>Later today</h2><div class="list">${left.slice(1).map((j) => rowHtml(j, place, leg)).join("")}</div>`;

@@ -1,6 +1,6 @@
 // App shell is cache-first. The timetable is network-first so new times show straight away,
 // falling back to the saved copy when there is no signal (or the network takes over 4 s).
-const CACHE = "omi-buses-v4";
+const CACHE = "omi-buses-v5";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "data/timetable.json", "icons/icon-180.png", "icons/icon-192.png"];
 
 self.addEventListener("install", (e) => {
