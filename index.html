@@ -83,6 +83,7 @@
   .row .t { font-size: 34px; font-weight: 800; min-width: 96px; }
   .row .info { font-size: 20px; color: var(--soft); line-height: 1.3; }
   .row .info b { color: var(--ink); }
+  .row .info .arr { color: var(--ink); font-size: 22px; font-weight: 800; }
   .flip {
     position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
     background: linear-gradient(rgba(253,248,238,0), var(--paper) 30%);
@@ -176,7 +177,7 @@ function fromText(j, leg) {
 
 function rowHtml(j, place, leg) {
   const to = leg === "there" ? data.places[place].name : "Truro";
-  return `<div class="row"><span class="t">${j.d}</span><span class="info"><b>Bus ${j.l}</b> · ${leg === "there" ? j.at : "from " + fromText(j, leg)}<br>arrives ${to} ${j.a}</span></div>`;
+  return `<div class="row"><span class="t">${j.d}</span><span class="info"><b>Bus ${j.l}</b> · ${leg === "there" ? j.at : "from " + fromText(j, leg)}<br><span class="arr">arrives ${to} ${j.a}</span></span></div>`;
 }
 
 function renderTimes() {
