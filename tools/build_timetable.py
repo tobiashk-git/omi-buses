@@ -124,6 +124,14 @@ def main():
         services=services,
     )
     dst = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "timetable.json")
+    try:
+        with open(dst, encoding="utf-8") as f:
+            old = json.load(f)
+        if old.get("places") == out and old.get("services") == services:
+            print("Timetable unchanged since", old.get("built"), "- leaving", os.path.normpath(dst), "alone")
+            return
+    except (OSError, ValueError):
+        pass
     with open(dst, "w", encoding="utf-8") as f:
         json.dump(data, f, separators=(",", ":"))
     for k, p in out.items():
