@@ -157,10 +157,16 @@ function busesOn(place, leg, date) {
 }
 
 function waitText(m) {
-  if (m <= 0) return "Due now";
-  if (m < 60) return `in ${m} minute${m === 1 ? "" : "s"}`;
+  if (m <= 0) return "Leaving now";
+  if (m < 60) return `Leaves in ${m} minute${m === 1 ? "" : "s"}`;
   const h = Math.floor(m / 60), r = m % 60;
-  return `in ${h} hour${h === 1 ? "" : "s"}` + (r ? ` ${r} min` : "");
+  return `Leaves in ${h} hour${h === 1 ? "" : "s"}` + (r ? ` ${r} min` : "");
+}
+
+function journeyText(j) {
+  const m = (mins(j.a) - mins(j.d) + 1440) % 1440;
+  const h = Math.floor(m / 60), r = m % 60;
+  return h ? `${h} hour${h === 1 ? "" : "s"}${r ? ` ${r} min` : ""}` : `${m} minutes`;
 }
 
 function fromText(j, leg) {
@@ -197,7 +203,7 @@ function renderTimes() {
       <div class="label">Next bus</div>
       <div class="time">${n.d}</div>
       <div class="in">${waitText(mins(n.d) - nowMin)}</div>
-      <div class="meta">Bus ${n.l} from ${fromText(n, leg)}<br>Arrives ${to} at ${n.a}</div>
+      <div class="meta">Bus ${n.l} from ${fromText(n, leg)}<br>Arrives ${to} at ${n.a}<br>The journey takes ${journeyText(n)}</div>
     </div>`;
     if (left.length > 1) {
       html += `<h2>Later today</h2><div class="list">${left.slice(1).map((j) => rowHtml(j, place, leg)).join("")}</div>`;
