@@ -36,4 +36,4 @@ bus station, so it is left out to keep things simple.
     python tools/build_timetable.py            # download feed + rebuild data
     python tools/build_timetable.py feed.zip   # rebuild from a local copy
     python tools/make_icons.py                 # redraw the icons
-Bump `CACHE` in `sw.js` when the app shell changes.
+Bump `VERSION` in `sw.js` and `APP_VERSION` in `index.html` together on every release (shown in the footer).

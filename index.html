@@ -123,6 +123,7 @@
 <div class="flip hidden" id="flipBar"><button id="flipBtn"></button></div>
 
 <script>
+const APP_VERSION = 7;  // keep in step with VERSION in sw.js
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const STOPS = {  // where Omi waits / gets off, in plain words
@@ -230,7 +231,7 @@ function renderTimes() {
 
 function footText() {
   const b = data.built.split("-");
-  return `Times from the official Go Cornwall Bus timetable, updated ${Number(b[2])} ${MONTHS[b[1] - 1]} ${b[0]}. Buses can run late or change.`;
+  return `Times from the official Go Cornwall Bus timetable, updated ${Number(b[2])} ${MONTHS[b[1] - 1]} ${b[0]}. Buses can run late or change. (Version ${APP_VERSION})`;
 }
 
 function renderHome() {
@@ -279,7 +280,18 @@ fetch("data/timetable.json")
       '<div class="notice" style="margin-top:40px">Sorry, the bus times could not be loaded. Please close the app and open it again.</div>';
   });
 
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+// Updates apply themselves: check for a new version whenever the app comes back to the
+// front, and reload once the new service worker takes over.
+if ("serviceWorker" in navigator) {
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (hadController && !reloading) { reloading = true; location.reload(); }
+  });
+  navigator.serviceWorker.register("sw.js").then((reg) => {
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) reg.update(); });
+  });
+}
 </script>
 </body>
 </html>
