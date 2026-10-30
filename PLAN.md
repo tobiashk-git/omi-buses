@@ -17,6 +17,12 @@ works out the right buses for any date, offline.
 | Falmouth | 32, 32A | Stand B (arrive G) | The Moor |
 | Treliske Hospital | 32A (Stand G), 87 (Stand J) | | Trelawny Entrance |
 | Portscatho | 50 | Stand C | Springfield |
+| Mevagissey | 27 / 22 / 22A (Stand D) to St Austell, change to 23 (St Austell Stand A) | Stand D | River Street Car Park (23 only, Mon-Sat, 4 a day) |
+
+Bus station stands are read from the data (parent station + platform code), so stand moves
+are picked up automatically. Mevagissey has no direct bus: the app joins the two legs per date,
+allowing at least 15 min to change and choosing the onward bus that arrives soonest
+(`busesOn` in index.html). The G3 community bus is not in the official data.
 
 The 494 circular also reaches the hospital but leaves from Lemon Quay, not the
 bus station, so it is left out to keep things simple.
@@ -29,6 +35,7 @@ bus station, so it is left out to keep things simple.
    home screen) and a weekly GitHub Action that runs `build_timetable.py` and commits
    `data/timetable.json` if it changed (`.github/workflows/refresh-timetable.yml`, Mondays 05:00 UTC,
    also runnable by hand from the Actions tab). Optional: a plain-words notice for diversions.
+2b. **Mevagissey (with a change at St Austell).** DONE 2026-10-30 (Version 9).
 3. **Live times (optional).** BODS live bus locations need an API key, so this needs a
    tiny proxy (e.g. a Cloudflare Worker) to keep the key off the phone.
 

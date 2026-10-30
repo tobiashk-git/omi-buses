@@ -23,6 +23,7 @@
     --falmouth: #0b4f8a;
     --hospital: #1d6b37;
     --portscatho: #7a2a82;
+    --mevagissey: #9a3f12;
     --accent: var(--falmouth);
   }
   * { box-sizing: border-box; }
@@ -43,7 +44,7 @@
   h1 { font-size: 30px; text-align: center; margin: 14px 0 22px; }
   .dest {
     display: flex; align-items: center; gap: 18px; width: 100%;
-    min-height: 120px; margin: 0 0 20px; padding: 18px 22px;
+    min-height: 108px; margin: 0 0 16px; padding: 16px 22px;
     border: 0; border-radius: 22px; color: #fff; text-align: left;
     box-shadow: 0 4px 0 rgba(0,0,0,.25);
   }
@@ -54,6 +55,7 @@
   .dest.falmouth { background: var(--falmouth); }
   .dest.hospital { background: var(--hospital); }
   .dest.portscatho { background: var(--portscatho); }
+  .dest.mevagissey { background: var(--mevagissey); }
 
   /* Times */
   .top { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
@@ -72,6 +74,11 @@
   .next .in { font-size: 30px; font-weight: 700; }
   .next .meta { font-size: 22px; margin-top: 10px; opacity: .95; }
   .next .arr { font-size: 27px; font-weight: 800; margin: 6px 0 2px; }
+  .step { display: flex; gap: 12px; align-items: flex-start; margin: 10px 0; }
+  .step .n {
+    flex: none; width: 36px; height: 36px; border-radius: 50%; background: #fff; color: var(--accent);
+    font-weight: 800; display: flex; align-items: center; justify-content: center; margin-top: 2px;
+  }
   .notice {
     background: var(--card); border: 3px solid var(--accent); border-radius: 18px;
     padding: 16px 18px; font-size: 26px; font-weight: 700; margin-bottom: 18px;
@@ -112,6 +119,7 @@
     <button class="dest falmouth" data-place="falmouth"><span class="ico">⚓</span><span class="txt">Falmouth<span class="sub">Bus 32 and 32A</span></span></button>
     <button class="dest hospital" data-place="hospital"><span class="ico">🏥</span><span class="txt">Treliske Hospital<span class="sub">Bus 32A and 87</span></span></button>
     <button class="dest portscatho" data-place="portscatho"><span class="ico">⛵</span><span class="txt">Portscatho<span class="sub">Bus 50</span></span></button>
+    <button class="dest mevagissey" data-place="mevagissey"><span class="ico">🎣</span><span class="txt">Mevagissey<span class="sub">Change at St Austell</span></span></button>
     <p class="foot" id="homeFoot"></p>
   </section>
 
@@ -129,20 +137,25 @@
 <div class="flip hidden" id="flipBar"><button id="flipBtn"></button></div>
 
 <script>
-const APP_VERSION = 8;  // keep in step with VERSION in sw.js
+const APP_VERSION = 9;  // keep in step with VERSION in sw.js
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const STOPS = {  // where Omi waits / gets off, in plain words
-  falmouth: "The Moor", hospital: "the Trelawny Entrance", portscatho: "Springfield",
+  falmouth: "The Moor", hospital: "the Trelawny Entrance", portscatho: "Springfield", mevagissey: "River Street Car Park",
 };
+const CHANGE_MIN = 15;  // least time allowed to change buses
 const TIMETABLES = {  // full timetable + live buses on bustimes.org, one page per route
   "32": "https://bustimes.org/services/32-falmouth-truro-truro-college",
   "32A": "https://bustimes.org/services/32a-penryn-truro-truro-college",
   "87": "https://bustimes.org/services/87-truro-perranporth-newquay",
   "50": "https://bustimes.org/services/50-truro-probus-tregony-portscatho-st-mawes-4",
+  "27": "https://bustimes.org/services/27-truro-grampound-st-austell-bugle-roche-lanive-4",
+  "22": "https://bustimes.org/services/22-st-austell-st-dennis-truro",
+  "22A": "https://bustimes.org/services/22a-st-austell-truro",
+  "23": "https://bustimes.org/services/23-st-austell-polgooth-mevagissey-heligan-gardens",
 };
-const ROUTES = { falmouth: ["32", "32A"], hospital: ["32A", "87"], portscatho: ["50"] };
-const PLACE_COLOUR = { falmouth: "--falmouth", hospital: "--hospital", portscatho: "--portscatho" };
+const ROUTES = { falmouth: ["32", "32A"], hospital: ["32A", "87"], portscatho: ["50"], mevagissey: ["27", "22", "22A", "23"] };
+const PLACE_COLOUR = { falmouth: "--falmouth", hospital: "--hospital", portscatho: "--portscatho", mevagissey: "--mevagissey" };
 
 let data = null;
 let view = null;  // {place, leg: "there" | "back"}
@@ -164,12 +177,34 @@ function runs(serviceId, date) {
   return s.start <= d && d <= s.end && s.days[weekday] === "1";
 }
 
-function busesOn(place, leg, date) {
+function legOn(list, date) {
   const seen = new Set();
-  return data.places[place][leg]
+  return list
     .filter((j) => runs(j.s, date))
     .filter((j) => { const k = j.d + j.l; if (seen.has(k)) return false; seen.add(k); return true; })
     .sort((a, b) => mins(a.d) - mins(b.d));
+}
+
+// For a journey with a change, each first bus is paired with the onward bus that arrives soonest,
+// among those leaving at least CHANGE_MIN after it gets in (a slower route leaving first can arrive
+// later). When several first buses reach the same onward bus, only the latest is kept, so Omi
+// never waits longer than she needs to.
+function busesOn(place, leg, date) {
+  const p = data.places[place];
+  const first = legOn(p[leg], date);
+  if (!p.via) return first;
+  const second = legOn(p[leg + "2"], date);
+  const best = new Map();
+  for (const a of first) {
+    const b = second.filter((b) => mins(b.d) >= mins(a.a) + CHANGE_MIN)
+      .reduce((best, b) => (!best || mins(b.a) <= mins(best.a) ? b : best), null);  // ties: leave later, wait less
+    if (!b) continue;
+    const k = b.d + b.l, prev = best.get(k);
+    if (!prev || mins(a.d) > mins(prev.d)) {
+      best.set(k, { d: a.d, a: b.a, l: a.l, at: a.at, x: { a: a.a, d: b.d, l: b.l, at: b.at } });
+    }
+  }
+  return [...best.values()].sort((a, b) => mins(a.d) - mins(b.d));
 }
 
 function waitText(m) {
@@ -191,6 +226,9 @@ function fromText(j, leg) {
 
 function rowHtml(j, place, leg) {
   const to = leg === "there" ? data.places[place].name : "Truro";
+  if (j.x) {
+    return `<div class="row"><span class="t">${j.d}</span><span class="info"><b>Bus ${j.l} then ${j.x.l}</b> · ${leg === "there" ? j.at : "from " + j.at}<br>change at ${data.places[place].via} ${j.x.d}<br><span class="arr">arrives ${to} ${j.a}</span></span></div>`;
+  }
   return `<div class="row"><span class="t">${j.d}</span><span class="info"><b>Bus ${j.l}</b> · ${leg === "there" ? j.at : "from " + fromText(j, leg)}<br><span class="arr">arrives ${to} ${j.a}</span></span></div>`;
 }
 
@@ -203,9 +241,10 @@ function renderTimes() {
 
   $("timesNow").textContent = `Now ${clock(now)}`;
   $("routeTitle").textContent = leg === "there" ? `Truro → ${name}` : `${name} → Truro`;
-  $("routeWhen").textContent = leg === "there"
+  const via = data.places[place].via;
+  $("routeWhen").textContent = (leg === "there"
     ? "From Truro Bus Station"
-    : `From ${STOPS[place]}, ${name}`;
+    : `From ${STOPS[place]}, ${name}`) + (via ? `. Change at ${via}.` : "");
   $("flipBtn").textContent = leg === "there" ? "⇄  Buses back to Truro" : `⇄  Buses to ${name}`;
 
   const today = busesOn(place, leg, now);
@@ -219,7 +258,11 @@ function renderTimes() {
       <div class="label">Next bus</div>
       <div class="time">${n.d}</div>
       <div class="in">${waitText(mins(n.d) - nowMin)}</div>
-      <div class="meta">Bus ${n.l} from ${fromText(n, leg)}<div class="arr">Arrives ${to} at ${n.a}</div>The journey takes ${journeyText(n)}</div>
+      <div class="meta">${n.x ? `
+        <div class="step"><span class="n">1</span><div>Bus ${n.l} from ${fromText(n, leg)}<br>to ${via}, arrives ${n.x.a}</div></div>
+        <div class="step"><span class="n">2</span><div>Change to Bus ${n.x.l} at ${n.x.d}<br>from ${via} Bus Station, ${n.x.at}</div></div>
+        <div class="arr">Arrives ${to} at ${n.a}</div>Whole journey ${journeyText(n)}`
+      : `Bus ${n.l} from ${fromText(n, leg)}<div class="arr">Arrives ${to} at ${n.a}</div>The journey takes ${journeyText(n)}`}</div>
     </div>`;
     if (left.length > 1) {
       html += `<h2>Later today</h2><div class="list">${left.slice(1).map((j) => rowHtml(j, place, leg)).join("")}</div>`;

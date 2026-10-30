@@ -13,13 +13,12 @@ from datetime import datetime, timezone
 FEED_URL = "https://data.bus-data.dft.gov.uk/timetable/download/gtfs-file/south_west/"
 AGENCY_NOC = "TFCN"  # Go Cornwall Bus
 
-# Stops that count as each place, with the label shown in the app.
-TRURO = {  # Truro Bus Station stands
-    "0800COA15345": "Stand B",
-    "0800COA15346": "Stand C",
-    "0800COA15350": "Stand G",
-    "0800COA15352": "Stand J",
-}
+# Bus stations are matched by their parent station code; each stand's letter comes from the
+# data, so a route moving to another stand is picked up automatically.
+TRURO_STATIONS = {"080G003", "080G010"}
+ST_AUSTELL_STATIONS = {"080G005"}
+
+# Other stops that count as each place, with the label shown in the app.
 PLACES = {
     "falmouth": {
         "name": "Falmouth",
@@ -35,6 +34,15 @@ PLACES = {
         "name": "Portscatho",
         "lines": ["50"],
         "stops": {"0800COC30859": "Springfield"},
+    },
+    # Journeys with a change: "lines" reach the "via" stops from Truro, "lines2" go on from there.
+    "mevagissey": {
+        "name": "Mevagissey",
+        "lines": ["27", "22", "22A"],
+        "via_name": "St Austell",
+        "via_stations": ST_AUSTELL_STATIONS,
+        "lines2": ["23"],
+        "stops": {"0800COC31036": "River Street Car Park"},
     },
 }
 
@@ -71,8 +79,15 @@ def main():
         urllib.request.urlretrieve(FEED_URL, path)
     z = zipfile.ZipFile(path)
 
+    stands = {}  # station code -> {stop_id: "Stand X"}
+    for st in rows(z, "stops.txt"):
+        if st["parent_station"]:
+            stands.setdefault(st["parent_station"], {})[st["stop_id"]] =                 f"Stand {st['platform_code']}" if st.get("platform_code") else "Bus Station"
+    station = lambda codes: {k: v for c in codes for k, v in stands.get(c, {}).items()}
+    TRURO = station(TRURO_STATIONS)
+
     agency = next(a["agency_id"] for a in rows(z, "agency.txt") if a["agency_noc"] == AGENCY_NOC)
-    wanted = {l for p in PLACES.values() for l in p["lines"]}
+    wanted = {l for p in PLACES.values() for l in p["lines"] + p.get("lines2", [])}
     routes = {r["route_id"]: r["route_short_name"] for r in rows(z, "routes.txt")
               if r["agency_id"] == agency and r["route_short_name"] in wanted}
     trips = {t["trip_id"]: t for t in rows(z, "trips.txt") if t["route_id"] in routes}
@@ -83,25 +98,38 @@ def main():
 
     out = {}
     used_services = set()
-    for key, place in PLACES.items():
-        legs = {"there": set(), "back": set()}
+
+    def hops(lines, origin, dest):
+        found = set()
         for tid, t in trips.items():
             line = routes[t["route_id"]]
-            if line not in place["lines"]:
+            if line not in lines:
                 continue
             seq = sorted(stop_times.get(tid, []), key=lambda r: int(r["stop_sequence"]))
-            for leg, (a, b) in (("there", (TRURO, place["stops"])), ("back", (place["stops"], TRURO))):
-                hop = journeys(seq, a, b)
-                if not hop:
-                    continue
-                dep, arr = seq[hop[0]], seq[hop[1]]
-                at = (TRURO if leg == "there" else place["stops"])[dep["stop_id"]]
-                legs[leg].add((hhmm(dep["departure_time"]), hhmm(arr["arrival_time"]), line, at, t["service_id"]))
-                used_services.add(t["service_id"])
-        out[key] = {
-            "name": place["name"],
-            **{leg: [dict(d=d, a=a, l=l, at=at, s=s) for d, a, l, at, s in sorted(v)] for leg, v in legs.items()},
-        }
+            hop = journeys(seq, origin, dest)
+            if not hop:
+                continue
+            dep, arr = seq[hop[0]], seq[hop[1]]
+            found.add((hhmm(dep["departure_time"]), hhmm(arr["arrival_time"]), line, origin[dep["stop_id"]], t["service_id"]))
+            used_services.add(t["service_id"])
+        return [dict(d=d, a=a, l=l, at=at, s=s) for d, a, l, at, s in sorted(found)]
+
+    for key, place in PLACES.items():
+        if "via_stations" in place:
+            place["via"] = station(place["via_stations"])
+            out[key] = dict(
+                name=place["name"], via=place["via_name"],
+                there=hops(place["lines"], TRURO, place["via"]),
+                there2=hops(place["lines2"], place["via"], place["stops"]),
+                back=hops(place["lines2"], place["stops"], place["via"]),
+                back2=hops(place["lines"], place["via"], TRURO),
+            )
+        else:
+            out[key] = dict(
+                name=place["name"],
+                there=hops(place["lines"], TRURO, place["stops"]),
+                back=hops(place["lines"], place["stops"], TRURO),
+            )
 
     services = {}
     for c in rows(z, "calendar.txt"):
@@ -135,7 +163,7 @@ def main():
     with open(dst, "w", encoding="utf-8") as f:
         json.dump(data, f, separators=(",", ":"))
     for k, p in out.items():
-        print(f"{k:11} there {len(p['there']):3}  back {len(p['back']):3}")
+        print(f"{k:11}", "  ".join(f"{leg} {len(v):3}" for leg, v in p.items() if isinstance(v, list)))
     print("services", len(services), "->", os.path.normpath(dst), os.path.getsize(dst), "bytes")
 
 
